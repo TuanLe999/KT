@@ -5,12 +5,12 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
@@ -18,104 +18,95 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 public class SignInActivity extends AppCompatActivity {
-
     private static final String FILE_EMAIL = "rememberMe";
+    private EditText emailEdit, passEdit;
+    private AppCompatButton loginBtn, registerBtn;
     private FirebaseAuth mAuth;
-    private EditText username_txt;
-    private EditText password_txt;
-    CheckBox checkBox;
+    private CheckBox rememberMe;
+    SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.sign_in);
-        checkBox = (CheckBox) findViewById(R.id.remember);
+
         mAuth = FirebaseAuth.getInstance();
-        username_txt = findViewById(R.id.txt_username);
-        password_txt = findViewById(R.id.txt_password);
 
-        SharedPreferences sharedPreferences = getSharedPreferences(FILE_EMAIL, MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        String username = sharedPreferences.getString("svEmail", "");
-        String password = sharedPreferences.getString("svPassword", "");
+        emailEdit = findViewById(R.id.txt_username);
+        passEdit = findViewById(R.id.txt_password);
+        loginBtn = findViewById(R.id.signin_button);
+        registerBtn = findViewById(R.id.signUp_btn);
+        rememberMe = findViewById(R.id.remember);
 
-        if (sharedPreferences.contains("checked") && sharedPreferences.getBoolean("checked", false) == true) {
-            checkBox.setChecked(true);
-        } else {
-            checkBox.setChecked(false);
-        }
+        sharedPreferences = getSharedPreferences("dataLogin", MODE_PRIVATE);
+        //lay gia tri
+        emailEdit.setText(sharedPreferences.getString("taikhoan", ""));
+        passEdit.setText(sharedPreferences.getString("matkhau", ""));
+        rememberMe.setChecked(sharedPreferences.getBoolean("checked", false));
 
-        username_txt.setText(username);
-        password_txt.setText(password);
-
-        AppCompatButton signIn_btn = (AppCompatButton) findViewById(R.id.signin_button);
-        signIn_btn.setOnClickListener(new View.OnClickListener() {
+        loginBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String username = username_txt.getText().toString();
-                String password = password_txt.getText().toString();
-                if (checkBox.isChecked()) {
-                    editor.putBoolean("checked", true);
-                    editor.apply();
-                    StoreDataUsingSharedPref(username, password);
-
-                    if (TextUtils.isEmpty(username)) {
-                        Toast mess = Toast.makeText(SignInActivity.this, "Vui lòng nhập Username!", Toast.LENGTH_LONG);
-                        return;
-                    } else if (TextUtils.isEmpty(password)) {
-                        Toast.makeText(SignInActivity.this, "Vui lòng nhập Password!", Toast.LENGTH_LONG).show();
-                        return;
-                    } else
-                        SignIn(username, password);
-                } else {
-
-                    if (TextUtils.isEmpty(username)) {
-                        Toast mess = Toast.makeText(SignInActivity.this, "Vui lòng nhập Username!", Toast.LENGTH_LONG);
-                        return;
-                    } else if (TextUtils.isEmpty(password)) {
-                        Toast.makeText(SignInActivity.this, "Vui lòng nhập Password!", Toast.LENGTH_LONG).show();
-                        return;
-                    } else{
-                        getSharedPreferences(FILE_EMAIL, MODE_PRIVATE).edit().commit();
-                        SignIn(username, password);
-                    }
-
-                }
-
+                login();
             }
         });
 
+        registerBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                register();
+            }
+        });
+
+        //Remember Me
 
     }
 
-    private void StoreDataUsingSharedPref(String username, String password) {
-        SharedPreferences.Editor editor = getSharedPreferences(FILE_EMAIL,MODE_PRIVATE).edit();
-        editor.putString("svEmail",username);
-        editor.putString("svPassword",password);
-        editor.apply();
+    private void register() {
+        Intent intent = new Intent(SignInActivity.this, SignUpActivity.class);
+        startActivity(intent);
     }
 
-    private void SignIn(String username, String password) {
+    private void login() {
+        String email, pass;
+        email = emailEdit.getText().toString();
+        pass = passEdit.getText().toString();
 
+        if (TextUtils.isEmpty(email)) {
+            Toast.makeText(this, "Vui lòng nhập email!", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (TextUtils.isEmpty(pass)) {
+            Toast.makeText(this, "Vui lòng nhập mật khẩu!", Toast.LENGTH_LONG).show();
+            return;
+        }
 
-        mAuth.signInWithEmailAndPassword(username, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+        mAuth.signInWithEmailAndPassword(email, pass).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if (task.isSuccessful()) {
-                    Toast.makeText(SignInActivity.this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(SignInActivity.this, ProfileActivity.class);
                     startActivity(intent);
+                    if (rememberMe.isChecked()) {
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putString("taikhoan", email);
+                        editor.putString("matkhau", pass);
+                        editor.putBoolean("checked", true);
+                        editor.commit();
+                    } else {
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.remove("taikhoan");
+                        editor.remove("matkhau");
+                        editor.remove("checked");
+                        editor.commit();
+                    }
                 } else {
-                    Toast.makeText(SignInActivity.this, "Đăng nhập thất bại!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Đăng nhập thất bại!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
-
     }
 }

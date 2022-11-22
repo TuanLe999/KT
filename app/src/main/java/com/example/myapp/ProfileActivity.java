@@ -21,7 +21,7 @@ public class ProfileActivity extends AppCompatActivity {
         police_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ProfileActivity.this, ListPoliceActivity.class);
+                Intent intent = new Intent(ProfileActivity.this, ListTreesActivity.class);
                 startActivity(intent);
             }
         });
@@ -52,7 +52,7 @@ public class ProfileActivity extends AppCompatActivity {
         list_friend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ProfileActivity.this, ListPoliceActivity.class);
+                Intent intent = new Intent(ProfileActivity.this, ListTreesActivity.class);
                 startActivity(intent);
             }
         });
